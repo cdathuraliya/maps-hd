@@ -25,14 +25,14 @@ class Maps
     FileUtils.mkdir_p(@path)
   end
 
-  def self.url(center_lat = LAT, center_lon = LON)
-    URI("https://maps.googleapis.com/maps/api/staticmap?zoom=#{ZOOM}&size=#{PIXELS}x#{PIXELS}" \
+  def self.url(center_lat = LAT, center_lon = LON, zoom = ZOOM)
+    URI("https://maps.googleapis.com/maps/api/staticmap?zoom=#{zoom}&size=#{PIXELS}x#{PIXELS}" \
         "&maptype=satellite&center=#{center_lat},#{center_lon}&key=#{API_KEY}")
   end
 
-  def download_image(center_lat = LAT, center_lon = LON)
+  def download_image(center_lat = LAT, center_lon = LON, zoom = ZOOM)
     File.open(@path.join("part_#{center_lat}_#{center_lon}.png"), 'wb') do |file|
-      file << Net::HTTP.get(self.class.url(center_lat, center_lon))
+      file << Net::HTTP.get(self.class.url(center_lat, center_lon, zoom))
     end
   end
 
@@ -51,8 +51,8 @@ class Maps
     $stdout.flush
   end
 
-  def download_zone(north_lat = LAT, south_lat = LAT, left_lon = LON, right_lon = LON)
-    corners = Mercator.corners(north_lat, left_lon, ZOOM, CROPPED_PIXELS, CROPPED_PIXELS)
+  def download_zone(north_lat = LAT, south_lat = LAT, left_lon = LON, right_lon = LON, zoom = ZOOM)
+    corners = Mercator.corners(north_lat, left_lon, zoom, CROPPED_PIXELS, CROPPED_PIXELS)
     total = ((right_lon - left_lon) / (corners[:E] - corners[:W])).ceil * ((north_lat - south_lat) / (corners[:N] - corners[:S])).ceil
     done = 0
     images = []
@@ -61,8 +61,8 @@ class Maps
       lon = left_lon
       row = []
       while lon < right_lon
-        row.push download_image(lat, lon)
-        corners = Mercator.corners(lat, lon, ZOOM, CROPPED_PIXELS, CROPPED_PIXELS)
+        row.push download_image(lat, lon, zoom)
+        corners = Mercator.corners(lat, lon, zoom, CROPPED_PIXELS, CROPPED_PIXELS)
         lon += 2 * (lon - corners[:W])
         done += 1
         print_progress('Downloading', done, total)
@@ -74,9 +74,9 @@ class Maps
     images
   end
 
-  def self.single_image(name = 'project', north_lat = LAT, south_lat = LAT, left_lon = LON, right_lon = LON)
+  def self.single_image(name = 'project', north_lat = LAT, south_lat = LAT, left_lon = LON, right_lon = LON, zoom = ZOOM)
     maps = Maps.new name
-    images = maps.download_zone(north_lat, south_lat, left_lon, right_lon)
+    images = maps.download_zone(north_lat, south_lat, left_lon, right_lon, zoom)
     GC.start
     total = images.flatten.count
     done = 0
@@ -87,12 +87,12 @@ class Maps
         done += 1
         Image.read(image.path).first.crop(CenterGravity, CROPPED_PIXELS, CROPPED_PIXELS).write(image.path)
         image_row.push(Image.read(image.path).first)
-        maps.print_progress('Merging', done, total)
+        maps.print_progress('Cropping', done, total)
       end
       GC.start
       big_image.push(image_row.append(false))
     end
-    puts ''
+    puts "\nMerging everything"
     big_image.append(true).write(maps.path.join('final.png'))
   end
 end
