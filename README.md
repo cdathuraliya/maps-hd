@@ -14,7 +14,7 @@ Start a Ruby console with `irb`, you'll then need to run
 
 ```ruby
 load 'maps.rb'
-Maps.single_image('project', north_latitude, south_latitude, east_longitude, west_longitude, zoom_level)
+Maps.single_image('project', north_latitude, south_latitude, west_longitude, east_longitude, zoom_level)
 ```
 
 This will download several images of the zone you asked for and combine them into a big one afterwards. All images will be in the `images/project` folder.
