@@ -4,7 +4,7 @@ Download a portion of the earth with Google's satellite images
 
 ## Installation
 
-You need to have (bundler)[http://bundler.io/] installed, just run `bundle` to install dependencies.
+You need to have [bundler](http://bundler.io/) installed, just run `bundle` to install dependencies.
 
 You'll also need to have a Google Static Maps API key, go to https://console.developers.google.com, create a project, enable Google Static Maps API, get your server key and paste it in a file `token` in this repo's folder.
 
